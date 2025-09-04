@@ -5,8 +5,8 @@ echo "pre-rebase hook"
 TARGET_BRANCH=$1      # branch to rebase onto
 CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD) # current branch
 
-echo "DEBUG: TARGET_BRANCH=$TARGET_BRANCH"
-echo "DEBUG: CURRENT_BRANCH=$CURRENT_BRANCH"
+# echo "DEBUG: TARGET_BRANCH=$TARGET_BRANCH"
+# echo "DEBUG: CURRENT_BRANCH=$CURRENT_BRANCH"
 
 if [ "$CURRENT_BRANCH" != "main" ]; then
   echo "Not on main branch, skipping..."
@@ -14,12 +14,12 @@ if [ "$CURRENT_BRANCH" != "main" ]; then
 fi
 
 if [ -z "$TARGET_BRANCH" ]; then
-    echo "DEBUG: TARGET_BRANCH is empty, exiting..."
+    echo "TARGET_BRANCH $TARGET_BRANCH is empty, exiting..."
     exit 0
 fi
 
 
-echo "Current branch is 'main'. Validating commits from '$TARGET_BRANCH' before rebase..."
+echo "Current branch is 'main'. Validating commits from $TARGET_BRANCH before rebase..."
 
 # The commits to validate are those on the feature branch that are not yet on origin/main.
 COMMITS_TO_VALIDATE=$(git rev-list $TARGET_BRANCH --not origin/main)
@@ -37,18 +37,10 @@ git log --oneline $TARGET_BRANCH --not origin/main
 for commit_hash in $COMMITS_TO_VALIDATE
 do
   message=$(git log --format=%B -n 1 "$commit_hash")
-  # NOTE: 在驗證前加入這些除錯行
-  echo "DEBUG: Current branch: $CURRENT_BRANCH"
-  echo "DEBUG: Main pattern: $MAIN_PATTERN"
-  echo "DEBUG: Message to validate: $message"
 
-  # 然後測試正規表達式
-  if [[ $message =~ $MAIN_PATTERN ]]; then
-    echo "DEBUG: Message matches main pattern"
-  else  
-    echo "DEBUG: Message does NOT match main pattern"
-  fi
-  # NOTE: above to be removed
+  # echo "DEBUG: Current branch: $CURRENT_BRANCH"
+  # echo "DEBUG: Main pattern: $MAIN_PATTERN"
+  # echo "DEBUG: Message to validate: $message"
   
   if ! validate_commit_message "$message" false; then
     echo -e "${RED}Rebase rejected. Commit $commit_hash does not conform to the 'main' branch commit message format.${NC}"
