@@ -1,5 +1,7 @@
 #!/bin/sh
-. "$(dirname -- "$0")/_/husky.sh"
+. "$(dirname "$0")/_/husky.sh"
+
+echo "--------------------------------"
 echo "pre-commit hook start"
 echo ""
 
@@ -8,4 +10,3 @@ npm run lint
 echo ""
 echo "pre-commit hook passed"
 echo "--------------------------------"
-echo ""
