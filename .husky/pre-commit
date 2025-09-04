@@ -7,3 +7,5 @@ npm run lint
 
 echo ""
 echo "pre-commit hook passed"
+echo "--------------------------------"
+echo ""

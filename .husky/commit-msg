@@ -10,4 +10,5 @@ validate_commit_message "$message" true || exit 1
 
 echo ""
 echo "commit-msg hook passed"
+echo "--------------------------------"
 echo ""
