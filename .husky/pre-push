@@ -57,6 +57,7 @@ do
 done
 
 echo "--------------------------------"
+echo ""
 echo "Running additional checks..."
 
 echo "original code check: yarn tsc --noEmit" # Type check
