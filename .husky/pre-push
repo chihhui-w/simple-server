@@ -37,14 +37,14 @@ do
     do
       message=$(git log --format=%B -n 1 "$commit_hash")
       if ! validate_commit_message "$message" false; then
-        echo -e "${RED}Push rejected. Commit $commit_hash does not conform to the 'main' branch commit message format.${NC}"
+        echo "${RED}Push rejected. Commit $commit_hash does not conform to the 'main' branch commit message format.${NC}"
         export CURRENT_BRANCH=$ORIGINAL_BRANCH # Restore branch
         exit 1
       fi
     done
 
     export CURRENT_BRANCH=$ORIGINAL_BRANCH # Restore branch
-    echo -e "${GREEN}All commit messages are valid.${NC}"
+    echo "${GREEN}All commit messages are valid.${NC}"
   else
     echo "Not pushing to main branch"
   fi
