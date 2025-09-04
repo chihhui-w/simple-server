@@ -1,0 +1,9 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+echo "commit-msg hook"
+
+. "$(dirname "$0")/scripts/common.sh"
+
+message="$(cat "$1")"
+validate_commit_message "$message" true || exit 1
+echo "commit-msg hook passed"

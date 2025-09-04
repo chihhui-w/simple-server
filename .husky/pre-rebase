@@ -1,0 +1,44 @@
+#!/bin/sh
+source "$(dirname "$0")/scripts/common.sh"
+echo "pre-rebase hook"
+UPSTREAM_BRANCH=$1
+REBASED_BRANCH=$2
+
+if [ "$CURRENT_BRANCH" != "main" ]; then
+  echo "Not on main branch, skipping..."
+  exit 0
+fi
+
+if [ -z "$REBASED_BRANCH" ]; then
+    exit 0
+fi
+
+
+echo "Current branch is 'main'. Validating commits from '$REBASED_BRANCH' before rebase..."
+
+# The commits to validate are those on the feature branch that are not yet on main.
+RANGE="$REBASED_BRANCH --not HEAD"
+COMMITS_TO_VALIDATE=$(git rev-list $RANGE)
+
+if [ -z "$COMMITS_TO_VALIDATE" ]; then
+  echo "No new commits to validate."
+  exit 0
+fi
+
+echo "Commits to validate:"
+git log --oneline $RANGE
+
+# Validate each commit message against main branch rules.
+# The CURRENT_BRANCH is already 'main', so no need to temporarily set it.
+for commit_hash in $COMMITS_TO_VALIDATE
+do
+  message=$(git log --format=%B -n 1 "$commit_hash")
+  if ! validate_commit_message "$message" false; then
+    echo -e "${RED}Rebase rejected. Commit $commit_hash does not conform to the 'main' branch commit message format.${NC}"
+    echo -e "${YELLOW}Please update the commit message on the '$REBASED_BRANCH' branch before rebasing onto 'main'.${NC}"
+    exit 1
+  fi
+done
+
+echo "pre-rebase hook passed"
+exit 0

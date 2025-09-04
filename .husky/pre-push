@@ -1,0 +1,61 @@
+#!/bin/sh
+source "$(dirname "$0")/scripts/common.sh"
+echo "pre-push hook"
+# This script is executed by Git when a push is made to the main branch.
+# It reads from stdin the list of refs that are being pushed.
+# Format: <local_ref> <local_sha> <remote_ref> <remote_sha>
+
+while read local_ref local_sha remote_ref remote_sha
+do
+  # Check if the remote ref is main
+  if [[ "$remote_ref" == "refs/heads/main" ]]; then
+    echo "Validating commits for 'main' branch push..."
+
+    # If the remote branch is being created, the remote_sha is all zeros.
+    if [[ "$remote_sha" =~ ^0+$ ]]; then
+      range="$local_sha"
+    else
+      range="$remote_sha..$local_sha"
+    fi
+
+    commits=$(git rev-list "$range")
+    if [ -z "$commits" ]; then
+      echo "No new commits to validate."
+      continue
+    fi
+
+    echo "Commits to validate:"
+    git log --oneline "$range"
+
+    # Temporarily set the branch to 'main' for the validation function
+    # to use the correct patterns.
+    ORIGINAL_BRANCH=$CURRENT_BRANCH
+    export CURRENT_BRANCH="main"
+
+    # Validate each commit message
+    for commit_hash in $commits
+    do
+      message=$(git log --format=%B -n 1 "$commit_hash")
+      if ! validate_commit_message "$message" false; then
+        echo -e "${RED}Push rejected. Commit $commit_hash does not conform to the 'main' branch commit message format.${NC}"
+        export CURRENT_BRANCH=$ORIGINAL_BRANCH # Restore branch
+        exit 1
+      fi
+    done
+
+    export CURRENT_BRANCH=$ORIGINAL_BRANCH # Restore branch
+    echo -e "${GREEN}All commit messages are valid.${NC}"
+  else
+    echo "Not pushing to main branch"
+  fi
+  
+done
+
+
+echo "Running additional checks..."
+
+echo "original code check: yarn tsc --noEmit" # Type check
+echo "original code check: yarn vitest --run" # Run test suites
+
+echo "pre-push hook passed"
+exit 0
