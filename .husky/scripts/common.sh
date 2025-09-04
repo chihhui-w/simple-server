@@ -20,7 +20,7 @@ export TASK_ID_PATTERN="[A-Z]+-[0-9]+"
 # 2. <TYPE>(PROJ-1234,PROJ-5678): <message>
 # 3. hotfix: <message>
 export MAIN_SCOPE_PATTERN="\(${TASK_ID_PATTERN}(,${TASK_ID_PATTERN})*\)"
-export MAIN_PATTERN="^(${ANTI_MAIN_COMMIT_TYPES})${MAIN_SCOPE_PATTERN}: .+|hotfix: .+"
+export MAIN_PATTERN="^(${ANTI_MAIN_COMMIT_TYPES})${MAIN_SCOPE_PATTERN}: .+|hotfix: .+|init"
 
 # --- Rules for Other Branches ---
 # Task ID is optional
