@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const port = 9999;
 
-// 你提供的 XML 字串（我稍微整理成純文字，去掉字串中的 \n 及多餘轉義）
+
 const rssXml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"
     xmlns:content="http://purl.org/rss/1.0/modules/content/"

@@ -1,24 +1,28 @@
 #!/bin/sh
 source "$(dirname "$0")/scripts/common.sh"
 echo "pre-rebase hook"
-UPSTREAM_BRANCH=$1
-REBASED_BRANCH=$2
+
+TARGET_BRANCH=$1      # branch to rebase onto
+CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD) # current branch
+
+echo "DEBUG: TARGET_BRANCH=$TARGET_BRANCH"
+echo "DEBUG: CURRENT_BRANCH=$CURRENT_BRANCH"
 
 if [ "$CURRENT_BRANCH" != "main" ]; then
   echo "Not on main branch, skipping..."
   exit 0
 fi
 
-if [ -z "$REBASED_BRANCH" ]; then
+if [ -z "$TARGET_BRANCH" ]; then
+    echo "DEBUG: TARGET_BRANCH is empty, exiting..."
     exit 0
 fi
 
 
-echo "Current branch is 'main'. Validating commits from '$REBASED_BRANCH' before rebase..."
+echo "Current branch is 'main'. Validating commits from '$TARGET_BRANCH' before rebase..."
 
-# The commits to validate are those on the feature branch that are not yet on main.
-RANGE="$REBASED_BRANCH --not HEAD"
-COMMITS_TO_VALIDATE=$(git rev-list $RANGE)
+# The commits to validate are those on the feature branch that are not yet on origin/main.
+COMMITS_TO_VALIDATE=$(git rev-list $TARGET_BRANCH --not origin/main)
 
 if [ -z "$COMMITS_TO_VALIDATE" ]; then
   echo "No new commits to validate."
@@ -26,16 +30,29 @@ if [ -z "$COMMITS_TO_VALIDATE" ]; then
 fi
 
 echo "Commits to validate:"
-git log --oneline $RANGE
+git log --oneline $TARGET_BRANCH --not origin/main
 
 # Validate each commit message against main branch rules.
 # The CURRENT_BRANCH is already 'main', so no need to temporarily set it.
 for commit_hash in $COMMITS_TO_VALIDATE
 do
   message=$(git log --format=%B -n 1 "$commit_hash")
+  # NOTE: 在驗證前加入這些除錯行
+  echo "DEBUG: Current branch: $CURRENT_BRANCH"
+  echo "DEBUG: Main pattern: $MAIN_PATTERN"
+  echo "DEBUG: Message to validate: $message"
+
+  # 然後測試正規表達式
+  if [[ $message =~ $MAIN_PATTERN ]]; then
+    echo "DEBUG: Message matches main pattern"
+  else  
+    echo "DEBUG: Message does NOT match main pattern"
+  fi
+  # NOTE: above to be removed
+  
   if ! validate_commit_message "$message" false; then
     echo -e "${RED}Rebase rejected. Commit $commit_hash does not conform to the 'main' branch commit message format.${NC}"
-    echo -e "${YELLOW}Please update the commit message on the '$REBASED_BRANCH' branch before rebasing onto 'main'.${NC}"
+    echo -e "${YELLOW}Please update the commit message on the '$TARGET_BRANCH' branch before rebasing onto 'main'.${NC}"
     exit 1
   fi
 done
