@@ -1,6 +1,7 @@
 #!/bin/sh
 source "$(dirname "$0")/scripts/common.sh"
 echo "pre-push hook"
+echo "--------------------------------"
 # This script is executed by Git when a push is made to the main branch.
 # It reads from stdin the list of refs that are being pushed.
 # Format: <local_ref> <local_sha> <remote_ref> <remote_sha>
@@ -51,11 +52,12 @@ do
   
 done
 
-
+echo "--------------------------------"
 echo "Running additional checks..."
 
 echo "original code check: yarn tsc --noEmit" # Type check
 echo "original code check: yarn vitest --run" # Run test suites
 
 echo "pre-push hook passed"
+echo "--------------------------------"
 exit 0
