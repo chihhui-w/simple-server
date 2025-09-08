@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const port = 9999;
 
+console.log("aaa");
 
 const rssXml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"
