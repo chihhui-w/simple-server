@@ -85,7 +85,7 @@ validate_commit_message() {
         return 1
     fi
   elif [ $CURRENT_BRANCH == "dev" ] || [ $CURRENT_BRANCH == "staging" ]; then
-    if [[ ! $message =~ $DEV_PATTERN ]]; then
+        if [[ ! $message =~ $DEV_PATTERN ]] && [[ ! $message =~ $MERGE_PATTERN ]]; then
         print_dev_error "$message"
         return 1
     fi
