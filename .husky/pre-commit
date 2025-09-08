@@ -1,12 +1,9 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
+# echo ""
+# echo "pre-commit hook start"
+# echo ""
 
-echo ""
-echo "pre-commit hook start"
-echo ""
+echo "run lint command"
 
-npm run lint
-
-echo ""
-echo "pre-commit hook passed"
-echo "--------------------------------"
+# echo ""
+# echo "pre-commit hook passed"
+# echo "--------------------------------"

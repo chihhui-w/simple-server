@@ -4,29 +4,17 @@ export YELLOW='\033[0;33m'
 export BLUE='\033[0;34m'
 export NC='\033[0m' # No Color
 
-echo "common.sh loaded"
-
-# All allowed types, including wip for feature branches
 export COMMIT_TYPES="feat|fix|test|docs|style|chore|refactor|wip"
-# Types for main branch, excluding wip
-export ANTI_MAIN_COMMIT_TYPES="feat|fix|test|docs|style|chore|refactor"
+export NON_WIP_COMMIT_TYPES="feat|fix|test|docs|style|chore|refactor"
 
-# Task ID format, e.g., PROJ-1234
-export TASK_ID_PATTERN="[A-Z]+-[0-9]+"
+export TASK_ID_PATTERN="[A-Za-z0-9-]+"
+export TASK_SCOPE_PATTERN="\(${TASK_ID_PATTERN}(,${TASK_ID_PATTERN})*\)"
 
-# --- Rules for Main Branch ---
-# On main branch, only below formats are allowed:
-# 1. <TYPE>(PROJ-1234): <message>
-# 2. <TYPE>(PROJ-1234,PROJ-5678): <message>
-# 3. hotfix: <message>
-export MAIN_SCOPE_PATTERN="\(${TASK_ID_PATTERN}(,${TASK_ID_PATTERN})*\)"
-export MAIN_PATTERN="^(${ANTI_MAIN_COMMIT_TYPES})${MAIN_SCOPE_PATTERN}: .+|hotfix: .+|init"
-
-# --- Rules for Other Branches ---
-# Task ID is optional
-# 1. <TYPE>: <message>
-# 2. <TYPE>(PROJ-1234): <message>
+export MAIN_PATTERN="^(hotfix(${TASK_SCOPE_PATTERN})?|(${NON_WIP_COMMIT_TYPES})(${TASK_SCOPE_PATTERN})): .+$"
+export DEV_PATTERN="^(hotfix|${NON_WIP_COMMIT_TYPES})(${TASK_SCOPE_PATTERN}): .+$"
 export OTHER_PATTERN="^(${COMMIT_TYPES})(\\(${TASK_ID_PATTERN}\\))?: .+"
+export MERGE_PATTERN="^Merge .+$"
+
 
 # Get current branch, fallback to commit hash if not on a branch
 export CURRENT_BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD)
@@ -55,10 +43,21 @@ print_main_error() {
   local message=$1
 
   print_general_info "$message"
-  echo "${YELLOW}On the main branch, required formats are:${NC}"
+  echo "${YELLOW}Required format for main branch:${NC}"
   echo "  1. ${GREEN}<TYPE>(PROJ-1234): <message>${NC}"
   echo "  2. ${GREEN}<TYPE>(PROJ-1234,PROJ-5678): <message>${NC}"
   echo "  3. ${GREEN}hotfix: <message>${NC}"
+  echo "\n"
+  print_readme_reminder
+}
+
+print_dev_error() {
+  local message=$1
+
+  print_general_info "$message"
+  echo "${YELLOW}Required format for dev/staging branch:${NC} ${GREEN}<TYPE>: <message>${NC} or ${GREEN}<TYPE>(TASK-123): <message>${NC} or ${GREEN}<TYPE>(br-pixel): <message>${NC}"
+  echo "\n"
+  echo "${YELLOW}Where type is one of:${NC} ${GREEN}$NON_WIP_COMMIT_TYPES${NC}"
   echo "\n"
   print_readme_reminder
 }
@@ -67,7 +66,7 @@ print_other_error() {
   local message=$1
 
   print_general_info "$message"
-  echo "${YELLOW}On this branch, required formats are:${NC}"
+  echo "${YELLOW}Required format for other branches:${NC}"
   echo "  1. ${BLUE}<TYPE>: <message>${NC}"
   echo "  2. ${BLUE}<TYPE>(PROJ-1234): <message>${NC}"
   echo "\n"
@@ -80,9 +79,14 @@ validate_commit_message() {
   local message=$1
   local check_other_branches=${2:-true}
 
-  if [ "$CURRENT_BRANCH" = "main" ]; then
-    if [[ ! $message =~ $MAIN_PATTERN ]]; then
+  if [ $CURRENT_BRANCH == "main" ]; then
+    if [[ ! $message =~ $MAIN_PATTERN ]] && [[ ! $message =~ $MERGE_PATTERN ]]; then
         print_main_error "$message"
+        return 1
+    fi
+  elif [ $CURRENT_BRANCH == "dev" ] || [ $CURRENT_BRANCH == "staging" ]; then
+    if [[ ! $message =~ $DEV_PATTERN ]]; then
+        print_dev_error "$message"
         return 1
     fi
   elif [ "$check_other_branches" = true ]; then

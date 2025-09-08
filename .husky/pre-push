@@ -1,6 +1,3 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
 echo ""
 echo "pre-push hook start"
 echo ""
@@ -12,9 +9,8 @@ source "$(dirname "$0")/scripts/common.sh"
 
 while read local_ref local_sha remote_ref remote_sha
 do
-  # Check if the remote ref is main
-  if [[ "$remote_ref" == "refs/heads/main" ]]; then
-    echo "Validating commits for 'main' branch push..."
+  if [[ "$remote_ref" == "refs/heads/main" || "$remote_ref" == "refs/heads/staging" || "$remote_ref" == "refs/heads/dev" ]]; then
+    echo "Validating commits for $remote_ref branch push..."
 
     # If the remote branch is being created, the remote_sha is all zeros.
     if [[ "$remote_sha" =~ ^0+$ ]]; then
@@ -32,17 +28,18 @@ do
     echo "Commits to validate:"
     git log --oneline "$range"
 
-    # Temporarily set the branch to 'main' for the validation function
-    # to use the correct patterns.
+    # Temporarily set the branch for the validation function
+    # to use the correct patterns based on the target branch.
     ORIGINAL_BRANCH=$CURRENT_BRANCH
-    export CURRENT_BRANCH="main"
+    TARGET_BRANCH=$(basename "$remote_ref")
+    export CURRENT_BRANCH="$TARGET_BRANCH"
 
     # Validate each commit message
     for commit_hash in $commits
     do
       message=$(git log --format=%B -n 1 "$commit_hash")
       if ! validate_commit_message "$message" false; then
-        echo "${RED}Push rejected. Commit $commit_hash does not conform to the 'main' branch commit message format.${NC}"
+        echo "${RED}Push rejected. Commit $commit_hash does not conform to the '$TARGET_BRANCH' branch commit message format.${NC}"
         export CURRENT_BRANCH=$ORIGINAL_BRANCH # Restore branch
         exit 1
       fi
@@ -51,7 +48,7 @@ do
     export CURRENT_BRANCH=$ORIGINAL_BRANCH # Restore branch
     echo "${GREEN}All commit messages are valid.${NC}"
   else
-    echo "Not pushing to main branch"
+    echo "Not pushing to main/staging/dev branch"
   fi
   
 done
@@ -59,9 +56,10 @@ done
 echo "--------------------------------"
 echo ""
 echo "Running additional checks..."
-
-echo "original code check: yarn tsc --noEmit" # Type check
-echo "original code check: yarn vitest --run" # Run test suites
+# Code related sanity checks; not halting if one of them fails so others can still be run
+yarn tsc --noEmit # Type check
+# TODO: to be updated if migrating to vitest
+npx jest tests # Run test suites
 
 echo ""
 echo "pre-push hook passed"
